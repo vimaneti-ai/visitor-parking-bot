@@ -110,7 +110,7 @@ visitor-parking-bot/
    - `expires_at = success timestamp + 24 hours`.
    - `next_registration_at = success timestamp + 24 hours`.
    - `registration_count` increments.
-6. Scheduler checks due registrations every minute.
+6. Scheduler checks due registrations every 2 hours by default.
 7. Registration becomes `COMPLETED` when `registration_count >= days`.
 
 ## Run Tests

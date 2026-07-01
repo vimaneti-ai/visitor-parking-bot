@@ -39,7 +39,7 @@ PLAYWRIGHT_HEADLESS=false
 PLAYWRIGHT_TIMEOUT_MS=30000
 MANUAL_CAPTCHA_TIMEOUT_SECONDS=300
 
-SCHEDULER_INTERVAL_SECONDS=60
+SCHEDULER_INTERVAL_SECONDS=7200
 RETRY_DELAY_MINUTES=30
 
 LOG_LEVEL=INFO
@@ -49,7 +49,7 @@ Important values:
 
 - `PLAYWRIGHT_HEADLESS=false`: keeps Chromium visible so you can watch and solve CAPTCHA manually.
 - `MANUAL_CAPTCHA_TIMEOUT_SECONDS=300`: waits up to 5 minutes for manual CAPTCHA completion.
-- `SCHEDULER_INTERVAL_SECONDS=60`: checks due registrations every minute.
+- `SCHEDULER_INTERVAL_SECONDS=7200`: checks due registrations every 2 hours.
 - `RETRY_DELAY_MINUTES=30`: retry delay after normal automation failure.
 
 Do not commit `.env`; it is gitignored.
