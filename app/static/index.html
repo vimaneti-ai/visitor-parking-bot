@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Visitor Parking Bot</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f7f9;
+        --panel: #ffffff;
+        --text: #1f2933;
+        --muted: #637083;
+        --line: #d9dee7;
+        --accent: #1f6feb;
+        --accent-strong: #174ea6;
+        --danger: #b42318;
+        --ok: #0f766e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      main {
+        width: min(1120px, calc(100% - 32px));
+        margin: 32px auto;
+      }
+
+      header {
+        margin-bottom: 20px;
+      }
+
+      h1 {
+        margin: 0 0 6px;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      form {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 20px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        font-size: 14px;
+        font-weight: 650;
+      }
+
+      input,
+      select {
+        width: 100%;
+        min-height: 40px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 8px 10px;
+        color: var(--text);
+        font: inherit;
+        background: #fff;
+      }
+
+      input:focus,
+      select:focus {
+        border-color: var(--accent);
+        outline: 3px solid rgba(31, 111, 235, 0.16);
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 18px;
+      }
+
+      button {
+        min-height: 40px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        padding: 8px 14px;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button[type="submit"] {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      button[type="submit"]:hover {
+        background: var(--accent-strong);
+      }
+
+      button[type="button"] {
+        background: #fff;
+        border-color: var(--line);
+        color: var(--text);
+      }
+
+      .message {
+        min-height: 24px;
+        margin-top: 14px;
+        font-weight: 650;
+      }
+
+      .message.ok {
+        color: var(--ok);
+      }
+
+      .message.error {
+        color: var(--danger);
+      }
+
+      .status {
+        margin-top: 18px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px;
+      }
+
+      .status dl {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 8px 14px;
+        margin: 0;
+      }
+
+      .status dt {
+        color: var(--muted);
+        font-weight: 650;
+      }
+
+      .status dd {
+        margin: 0;
+      }
+
+      @media (max-width: 760px) {
+        main {
+          width: min(100% - 20px, 1120px);
+          margin: 20px auto;
+        }
+
+        .grid,
+        .status dl {
+          grid-template-columns: 1fr;
+        }
+
+        .actions {
+          align-items: stretch;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Visitor Parking Bot</h1>
+        <p>Submit a local Register2Park visitor registration and run the first attempt immediately.</p>
+      </header>
+
+      <form id="registration-form">
+        <div class="grid">
+          <label>
+            Parking registration URL
+            <input name="website_url" type="url" value="https://www.register2park.com/" required />
+          </label>
+          <label>
+            Apartment name
+            <input name="apartment_name" value="Lakeside Urban Center Apartments" required />
+          </label>
+          <label>
+            Apartment number
+            <input name="apartment_number" autocomplete="off" required />
+          </label>
+          <label>
+            Vehicle make
+            <input name="vehicle_make" autocomplete="off" required />
+          </label>
+          <label>
+            Vehicle model
+            <input name="vehicle_model" autocomplete="off" required />
+          </label>
+          <label>
+            Vehicle year
+            <input name="vehicle_year" type="number" min="1980" max="2100" required />
+          </label>
+          <label>
+            Vehicle color
+            <input name="vehicle_color" autocomplete="off" required />
+          </label>
+          <label>
+            Plate state
+            <input name="plate_state" maxlength="2" autocomplete="off" required />
+          </label>
+          <label>
+            License plate
+            <input name="plate_number" maxlength="20" autocomplete="off" required />
+          </label>
+          <label>
+            Confirm license plate
+            <input name="confirm_plate_number" maxlength="20" autocomplete="off" required />
+          </label>
+          <label>
+            Email address
+            <input name="email" type="email" autocomplete="email" required />
+          </label>
+          <label>
+            Number of days
+            <input name="days" type="number" min="1" max="14" value="7" required />
+          </label>
+        </div>
+
+        <div class="actions">
+          <button type="submit">Submit</button>
+          <button type="button" id="reset-button">Cancel / Reset</button>
+        </div>
+        <div id="message" class="message" role="status" aria-live="polite"></div>
+      </form>
+
+      <section id="status-panel" class="status" hidden>
+        <dl>
+          <dt>Registration ID</dt>
+          <dd id="status-id"></dd>
+          <dt>Status</dt>
+          <dd id="status-status"></dd>
+          <dt>Successful registrations</dt>
+          <dd id="status-count"></dd>
+          <dt>First registered at</dt>
+          <dd id="status-first"></dd>
+          <dt>Last registered at</dt>
+          <dd id="status-last"></dd>
+          <dt>Expires at</dt>
+          <dd id="status-expires"></dd>
+          <dt>Next registration at</dt>
+          <dd id="status-next"></dd>
+          <dt>Automation</dt>
+          <dd id="status-runtime">Not running</dd>
+        </dl>
+      </section>
+    </main>
+
+    <script>
+      const form = document.querySelector("#registration-form");
+      const resetButton = document.querySelector("#reset-button");
+      const message = document.querySelector("#message");
+      const statusPanel = document.querySelector("#status-panel");
+      let runtimePollId = null;
+
+      function setMessage(text, kind) {
+        message.textContent = text;
+        message.className = `message ${kind || ""}`;
+      }
+
+      function formatDate(value) {
+        if (!value) return "Not set";
+        return new Date(value).toLocaleString();
+      }
+
+      function showStatus(registration) {
+        statusPanel.hidden = false;
+        document.querySelector("#status-id").textContent = registration.id;
+        document.querySelector("#status-status").textContent = registration.status;
+        document.querySelector("#status-count").textContent =
+          `${registration.registration_count} / ${registration.days}`;
+        document.querySelector("#status-first").textContent = formatDate(registration.first_registered_at);
+        document.querySelector("#status-last").textContent = formatDate(registration.last_registered_at);
+        document.querySelector("#status-expires").textContent = formatDate(registration.expires_at);
+        document.querySelector("#status-next").textContent = formatDate(registration.next_registration_at);
+      }
+
+      async function refreshRegistration(registrationId) {
+        const response = await fetch(`/registrations/${registrationId}`);
+        if (response.ok) {
+          showStatus(await response.json());
+        }
+      }
+
+      function applyRuntimeStatus(runtime) {
+        const runtimeText = runtime.updated_at
+          ? `${runtime.message} (${new Date(runtime.updated_at).toLocaleTimeString()})`
+          : runtime.message;
+        document.querySelector("#status-runtime").textContent = runtimeText;
+
+        if (runtime.state === "captcha_paused") {
+          setMessage("Manual CAPTCHA completion required. Complete it in the open browser; automation will resume automatically.", "error");
+        } else if (runtime.state === "captcha_resumed") {
+          setMessage("Manual CAPTCHA completed. Automation resumed.", "ok");
+        } else if (runtime.state === "success" || runtime.state === "completed") {
+          setMessage(runtime.message, "ok");
+        } else if (runtime.state === "failed") {
+          setMessage(runtime.message, "error");
+        }
+      }
+
+      function startRuntimePolling(registrationId) {
+        if (runtimePollId) {
+          clearInterval(runtimePollId);
+        }
+        runtimePollId = setInterval(async () => {
+          try {
+            const response = await fetch(`/registrations/${registrationId}/runtime-status`);
+            if (!response.ok) return;
+            const runtime = await response.json();
+            applyRuntimeStatus(runtime);
+            await refreshRegistration(registrationId);
+
+            if (["success", "completed", "failed"].includes(runtime.state)) {
+              clearInterval(runtimePollId);
+              runtimePollId = null;
+            }
+          } catch (error) {
+            console.warn("Unable to refresh runtime status", error);
+          }
+        }, 2000);
+      }
+
+      function readPayload() {
+        const data = Object.fromEntries(new FormData(form).entries());
+        data.vehicle_year = Number(data.vehicle_year);
+        data.days = Number(data.days);
+        data.plate_state = data.plate_state.trim().toUpperCase();
+        data.plate_number = data.plate_number.trim().toUpperCase();
+        data.confirm_plate_number = data.confirm_plate_number.trim().toUpperCase();
+        return data;
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        setMessage("", "");
+
+        const payload = readPayload();
+        if (payload.plate_number !== payload.confirm_plate_number) {
+          setMessage("License plate and confirmation must match.", "error");
+          return;
+        }
+        if (payload.days < 1 || payload.days > 14) {
+          setMessage("Number of days must be between 1 and 14.", "error");
+          return;
+        }
+        if (payload.vehicle_year < 1980 || payload.vehicle_year > 2100) {
+          setMessage("Vehicle year must be between 1980 and 2100.", "error");
+          return;
+        }
+
+        const submitButton = form.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        try {
+          const response = await fetch("/registrations", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const body = await response.json();
+          if (!response.ok) {
+            throw new Error(body.detail ? JSON.stringify(body.detail) : "Unable to save registration.");
+          }
+          setMessage("Registration request saved. First registration is running now.", "ok");
+          showStatus(body);
+          startRuntimePolling(body.id);
+        } catch (error) {
+          setMessage(error.message, "error");
+        } finally {
+          submitButton.disabled = false;
+        }
+      });
+
+      resetButton.addEventListener("click", () => {
+        form.reset();
+        form.website_url.value = "https://www.register2park.com/";
+        form.apartment_name.value = "Lakeside Urban Center Apartments";
+        form.days.value = "7";
+        statusPanel.hidden = true;
+        document.querySelector("#status-runtime").textContent = "Not running";
+        if (runtimePollId) {
+          clearInterval(runtimePollId);
+          runtimePollId = null;
+        }
+        setMessage("Form cleared.", "ok");
+      });
+    </script>
+  </body>
+</html>
