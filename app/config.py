@@ -18,6 +18,7 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite:///./visitor_parking.db"
     screenshot_dir: str = "./screenshots"
+    screenshot_retention_hours: int = 24
 
     register2park_url: str = "https://www.register2park.com/"
     register2park_property_name: str = "Lakeside Urban Center Apartments"
@@ -26,7 +27,8 @@ class Settings(BaseSettings):
     playwright_timeout_ms: int = 30000
     manual_captcha_timeout_seconds: int = 300
 
-    scheduler_interval_seconds: int = 60
+    scheduler_interval_seconds: int = 7200
+    screenshot_cleanup_interval_seconds: int = 3600
     retry_delay_minutes: int = 30
 
     log_level: str = "INFO"

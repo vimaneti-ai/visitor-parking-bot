@@ -31,6 +31,7 @@ The app reads `.env` from the project root.
 ```env
 DATABASE_URL=sqlite:///./visitor_parking.db
 SCREENSHOT_DIR=./screenshots
+SCREENSHOT_RETENTION_HOURS=24
 
 REGISTER2PARK_URL=https://www.register2park.com/
 REGISTER2PARK_PROPERTY_NAME=Lakeside Urban Center Apartments
@@ -40,6 +41,7 @@ PLAYWRIGHT_TIMEOUT_MS=30000
 MANUAL_CAPTCHA_TIMEOUT_SECONDS=300
 
 SCHEDULER_INTERVAL_SECONDS=7200
+SCREENSHOT_CLEANUP_INTERVAL_SECONDS=3600
 RETRY_DELAY_MINUTES=30
 
 LOG_LEVEL=INFO
@@ -50,6 +52,8 @@ Important values:
 - `PLAYWRIGHT_HEADLESS=false`: keeps Chromium visible so you can watch and solve CAPTCHA manually.
 - `MANUAL_CAPTCHA_TIMEOUT_SECONDS=300`: waits up to 5 minutes for manual CAPTCHA completion.
 - `SCHEDULER_INTERVAL_SECONDS=7200`: checks due registrations every 2 hours.
+- `SCREENSHOT_RETENTION_HOURS=24`: deletes local debug screenshots after 24 hours.
+- `SCREENSHOT_CLEANUP_INTERVAL_SECONDS=3600`: checks once per hour for old screenshots.
 - `RETRY_DELAY_MINUTES=30`: retry delay after normal automation failure.
 
 Do not commit `.env`; it is gitignored.
@@ -64,7 +68,7 @@ pytest
 Expected result:
 
 ```text
-7 passed
+9 passed
 ```
 
 ## First Run

@@ -32,6 +32,61 @@ sqlite3 /Users/vinod/Projects/visitor-parking-bot/visitor_parking.db
 If you run `sqlite3 visitor_parking.db` from your home folder, SQLite will
 create/open `~/visitor_parking.db`, which will not contain the project tables.
 
+## Open The AWS Production Database
+
+On AWS, the production `.env` should point to:
+
+```env
+DATABASE_URL=sqlite:////opt/visitor-parking-bot/data/visitor_parking.db
+```
+
+Because the app runs as `visitorbot`, inspect the production database with
+`sudo`:
+
+```bash
+sudo sqlite3 /opt/visitor-parking-bot/data/visitor_parking.db
+```
+
+Then run one SQLite command per line:
+
+```sql
+.tables
+```
+
+```sql
+.headers on
+```
+
+```sql
+.mode column
+```
+
+```sql
+SELECT id, apartment_number, plate_number, email, status,
+       registration_count, next_registration_at
+FROM registrations;
+```
+
+```sql
+SELECT id, registration_id, attempted_at, status, message
+FROM registration_attempts
+ORDER BY attempted_at DESC;
+```
+
+Exit:
+
+```sql
+.quit
+```
+
+If you see `unable to open database file`, check ownership and existence:
+
+```bash
+sudo ls -la /opt/visitor-parking-bot/data
+sudo cat /opt/visitor-parking-bot/appsrc/.env
+sudo systemctl restart visitor-parking-bot
+```
+
 ## Tables
 
 ```sql

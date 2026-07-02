@@ -2,14 +2,15 @@
 
 Local visitor parking registration automation for Register2Park-style flows.
 
-This project runs a FastAPI app with a local browser UI, SQLite persistence,
-APScheduler-based retries, and Playwright browser automation. It is intended
+This project runs a FastAPI app with a browser UI, SQLite persistence,
+APScheduler-based retries, and Playwright browser automation. It can run
+locally on macOS or as a single-server AWS Lightsail deployment. It is intended
 for legitimate visitor parking registration only, on registrations you are
 allowed to submit.
 
 ## What It Does
 
-- Serves a local form at `http://127.0.0.1:8000`.
+- Serves a registration form locally or through an AWS/Nginx public endpoint.
 - Saves vehicle registration requests to SQLite.
 - Immediately starts the first Playwright registration attempt after submit.
 - Uses the actual first successful registration time as the daily schedule anchor.
@@ -17,6 +18,7 @@ allowed to submit.
 - Stores every attempt with status, message, screenshot path, and confirmation text.
 - Pauses for manual CAPTCHA completion in the visible browser, then resumes from the same page.
 - Stops safely on login, OTP, payment, or other security/approval gates.
+- Deletes local debug screenshots after 24 hours by default.
 
 ## Safety Rules
 
@@ -24,14 +26,15 @@ This bot does not bypass security mechanisms.
 
 - CAPTCHA: pauses and waits for you to solve it manually in the headed browser.
 - OTP, login, payment, or security walls: stops and records the attempt.
-- Screenshots stay local in `screenshots/`.
+- Screenshots stay on the machine/server running the app.
 - Personal data is not hardcoded; registration details come from the UI/API request.
-- This is a local MVP, not a multi-user production service.
+- This is a single-user automation service, not a multi-tenant SaaS app.
 
 ## Documentation
 
 - [SETUP.md](SETUP.md): install Python dependencies, Playwright, and `.env`.
 - [DEPLOYMENT.md](DEPLOYMENT.md): run locally, ports, VS Code/macOS notes, and service guidance.
+- [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md): complete beginner-friendly AWS Lightsail deployment guide.
 - [API.md](API.md): endpoints, request payloads, statuses, and examples.
 - [AUTOMATION.md](AUTOMATION.md): Register2Park Playwright flow, CAPTCHA pause/resume, selector notes.
 - [DATABASE.md](DATABASE.md): SQLite tables, useful queries, and where data is stored.
@@ -69,6 +72,7 @@ visitor-parking-bot/
   README.md
   SETUP.md
   DEPLOYMENT.md
+  AWS_DEPLOYMENT.md
   API.md
   AUTOMATION.md
   DATABASE.md
@@ -92,7 +96,7 @@ visitor-parking-bot/
       index.html                  # local form UI
     utils/
       logger.py
-  screenshots/                    # local debug screenshots
+  screenshots/                    # local debug screenshots, cleaned after 24 hours by default
   tests/
     test_registration_service.py
   visitor_parking.db              # local SQLite DB, gitignored

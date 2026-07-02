@@ -9,6 +9,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from app.config import settings
 from app.database import SessionLocal
 from app.services.registration_service import process_due_registrations
+from app.services.screenshot_cleanup import cleanup_old_screenshots
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -28,6 +29,15 @@ def _job() -> None:
         db.close()
 
 
+def _cleanup_screenshots_job() -> None:
+    try:
+        deleted = cleanup_old_screenshots()
+        if deleted:
+            logger.info("Deleted %s old screenshot(s)", deleted)
+    except Exception:  # noqa: BLE001
+        logger.exception("Error while cleaning up screenshots")
+
+
 def start_scheduler() -> None:
     if scheduler.running:
         return
@@ -38,6 +48,14 @@ def start_scheduler() -> None:
         id="process_due_registrations",
         replace_existing=True,
     )
+    scheduler.add_job(
+        _cleanup_screenshots_job,
+        "interval",
+        seconds=settings.screenshot_cleanup_interval_seconds,
+        id="cleanup_old_screenshots",
+        replace_existing=True,
+    )
+    _cleanup_screenshots_job()
     scheduler.start()
     logger.info(
         "Scheduler started, checking every %s seconds", settings.scheduler_interval_seconds

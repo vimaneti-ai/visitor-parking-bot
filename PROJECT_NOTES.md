@@ -47,6 +47,118 @@ Fix:
 
 - Added database inspection commands in [DATABASE.md](DATABASE.md).
 
+### AWS Production SQLite Needed `sudo`
+
+Issue:
+
+On AWS, opening:
+
+```bash
+sqlite3 /opt/visitor-parking-bot/data/visitor_parking.db
+```
+
+failed with:
+
+```text
+unable to open database file
+```
+
+Cause:
+
+The production DB folder is owned by the `visitorbot` service user.
+
+Fix:
+
+- Used `sudo sqlite3 /opt/visitor-parking-bot/data/visitor_parking.db`.
+- Documented production DB inspection in [DATABASE.md](DATABASE.md).
+- Added troubleshooting guidance in [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+
+### AWS SSH Key Was Missing On Mac
+
+Issue:
+
+SSH from Mac failed with:
+
+```text
+Permission denied (publickey)
+```
+
+Cause:
+
+The Lightsail private key was not downloaded to `~/.ssh`.
+
+Fix:
+
+- Downloaded the region-specific Lightsail key from `Lightsail > Account > SSH keys`.
+- Moved it to `~/.ssh`.
+- Set permissions with `chmod 400`.
+- Connected with `ssh -i ~/.ssh/LightsailDefaultKey-us-east-2.pem`.
+
+### `visitorbot` Could Not Open Interactive Shell
+
+Issue:
+
+Running:
+
+```bash
+sudo -iu visitorbot
+```
+
+returned:
+
+```text
+This account is currently not available.
+```
+
+Cause:
+
+`visitorbot` is a system service user with no login shell.
+
+Fix:
+
+- Kept `ubuntu` as the admin shell user.
+- Ran app commands with `sudo -u visitorbot`.
+- Added directory permissions for admin inspection.
+
+### systemd Could Not Start Gunicorn
+
+Issue:
+
+The app service failed with:
+
+```text
+status=203/EXEC
+```
+
+Cause:
+
+Gunicorn was not installed in the server virtual environment, and multiline
+`ExecStart` can be easy to misformat.
+
+Fix:
+
+- Installed Gunicorn into `.venv`.
+- Documented a single-line `ExecStart` fallback.
+- Added checks for `.venv/bin/gunicorn`.
+
+### Mac Screen Sharing Required A Password
+
+Issue:
+
+macOS Screen Sharing requested a password for `localhost` even though x11vnc
+was configured with `-nopw`.
+
+Fix:
+
+- Kept x11vnc bound to localhost for safety.
+- Added noVNC over SSH tunnel as the recommended Mac access method:
+
+```bash
+ssh -i ~/.ssh/LightsailDefaultKey-us-east-2.pem -L 6080:localhost:6080 ubuntu@16.58.134.55
+```
+
+- Opened `http://localhost:6080/vnc.html` on the Mac.
+
 ### Missing Apartment Number Field
 
 Issue:

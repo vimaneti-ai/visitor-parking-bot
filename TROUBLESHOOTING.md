@@ -67,6 +67,124 @@ MANUAL_CAPTCHA_TIMEOUT_SECONDS=600
 
 Then restart uvicorn.
 
+On AWS, solve CAPTCHA through noVNC:
+
+```bash
+ssh -i ~/.ssh/LightsailDefaultKey-us-east-2.pem -L 6080:localhost:6080 ubuntu@YOUR_STATIC_IP
+```
+
+Then open on your Mac:
+
+```text
+http://localhost:6080/vnc.html
+```
+
+Keep the SSH tunnel terminal open.
+
+## AWS SSH Says `Permission denied (publickey)`
+
+The server is reachable, but your Mac is not using the Lightsail private key.
+
+Download the key from:
+
+```text
+Lightsail > Account > SSH keys
+```
+
+Use the key for the same region as the instance, for example Ohio/us-east-2:
+
+```bash
+mkdir -p ~/.ssh
+mv ~/Downloads/LightsailDefaultKey-us-east-2.pem ~/.ssh/
+chmod 400 ~/.ssh/LightsailDefaultKey-us-east-2.pem
+ssh -i ~/.ssh/LightsailDefaultKey-us-east-2.pem ubuntu@YOUR_STATIC_IP
+```
+
+## `sudo -iu visitorbot` Says Account Not Available
+
+This is expected. `visitorbot` is a system service user and does not have an
+interactive login shell.
+
+Run commands as `ubuntu`, and prefix app commands with:
+
+```bash
+sudo -u visitorbot
+```
+
+Example:
+
+```bash
+cd /opt/visitor-parking-bot/appsrc
+sudo -u visitorbot .venv/bin/pip install -r requirements.txt
+```
+
+## Git Says `detected dubious ownership`
+
+The repo is owned by `visitorbot`, but you are inspecting it as `ubuntu`.
+
+Fix:
+
+```bash
+git config --global --add safe.directory /opt/visitor-parking-bot/appsrc
+```
+
+## `cd /opt/visitor-parking-bot/appsrc` Says Permission Denied
+
+Allow the admin user to enter/read the app directory:
+
+```bash
+sudo chmod o+x /opt/visitor-parking-bot
+sudo chmod -R o+rX /opt/visitor-parking-bot/appsrc
+```
+
+## systemd Shows `status=203/EXEC`
+
+systemd could not execute the command in `ExecStart`.
+
+Check Gunicorn:
+
+```bash
+ls -la /opt/visitor-parking-bot/appsrc/.venv/bin/gunicorn
+```
+
+If missing:
+
+```bash
+cd /opt/visitor-parking-bot/appsrc
+sudo -u visitorbot .venv/bin/pip install gunicorn
+```
+
+Also make `ExecStart` one single line in:
+
+```bash
+sudo nano /etc/systemd/system/visitor-parking-bot.service
+```
+
+Then:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart visitor-parking-bot
+sudo systemctl status visitor-parking-bot
+```
+
+## AWS SQLite Says `unable to open database file`
+
+The production database is usually owned by `visitorbot`.
+
+Use:
+
+```bash
+sudo sqlite3 /opt/visitor-parking-bot/data/visitor_parking.db
+```
+
+Inspect:
+
+```bash
+sudo ls -la /opt/visitor-parking-bot/data
+sudo cat /opt/visitor-parking-bot/appsrc/.env
+```
+
 ## Email Confirmation Is Not Submitted
 
 The automation tries this sequence:
