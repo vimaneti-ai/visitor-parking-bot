@@ -35,6 +35,22 @@ High-level flow:
 10. Enter the provided email and submit.
 11. Detect final approval/confirmation.
 
+## Duplicate Email Protection
+
+If the email confirmation step completes but the automation cannot verify a
+final success page afterward, the registration is moved to `ACTION_REQUIRED`.
+
+That means:
+
+- the attempt is recorded as `FAILED`
+- `next_registration_at` is cleared
+- the scheduler will not retry automatically
+- another confirmation email is not sent every scheduler cycle
+- the UI shows a `Retry now` button for a deliberate manual retry
+
+This protects against repeated confirmation emails when Register2Park accepts
+the email submission but does not show a success marker the bot recognizes.
+
 ## CAPTCHA Handling
 
 The app does not bypass CAPTCHA.

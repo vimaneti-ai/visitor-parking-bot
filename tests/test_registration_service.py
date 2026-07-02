@@ -131,6 +131,28 @@ def test_run_attempt_failure_retries_later(db_session, monkeypatch):
     assert registration.attempts[0].status == "FAILED"
 
 
+def test_email_submitted_failure_pauses_automatic_retries(db_session, monkeypatch):
+    registration = svc.create_registration(db_session, _sample_payload(days=3))
+
+    class FakeResult:
+        success = False
+        message = "Email confirmation was submitted, but final success could not be verified."
+        screenshot_path = "/tmp/email-submitted.png"
+        confirmation_text = None
+        retryable = False
+        email_submitted = True
+
+    monkeypatch.setattr(svc, "run_registration", lambda automation_input, **kwargs: FakeResult())
+
+    svc.run_attempt_for_registration(db_session, registration, datetime.utcnow())
+
+    assert registration.registration_count == 0
+    assert registration.status == "ACTION_REQUIRED"
+    assert registration.next_registration_at is None
+    assert registration.attempts[0].status == "FAILED"
+    assert "Email confirmation was submitted" in registration.attempts[0].message
+
+
 def test_run_attempt_blocked_marks_failed_and_stops(db_session, monkeypatch):
     registration = svc.create_registration(db_session, _sample_payload(days=3))
 

@@ -22,6 +22,7 @@ from app.services.registration_service import (
     cancel_registration,
     create_registration,
     process_registration_by_id,
+    queue_manual_retry,
 )
 from app.services.runtime_status import get_runtime_status
 from app.utils.logger import get_logger
@@ -90,4 +91,17 @@ def cancel_registration_endpoint(
     registration = cancel_registration(db, registration_id)
     if registration is None:
         raise HTTPException(status_code=404, detail="Registration not found")
+    return registration
+
+
+@app.post("/registrations/{registration_id}/retry", response_model=RegistrationOut)
+def retry_registration_endpoint(
+    registration_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+) -> Registration:
+    registration = queue_manual_retry(db, registration_id)
+    if registration is None:
+        raise HTTPException(status_code=404, detail="Registration not found")
+    background_tasks.add_task(process_registration_by_id, registration.id)
     return registration

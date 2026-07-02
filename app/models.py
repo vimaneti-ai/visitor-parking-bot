@@ -15,6 +15,7 @@ from app.database import Base
 class RegistrationStatus(str, enum.Enum):
     PENDING = "PENDING"
     ACTIVE = "ACTIVE"
+    ACTION_REQUIRED = "ACTION_REQUIRED"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
     CANCELLED = "CANCELLED"

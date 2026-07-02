@@ -120,6 +120,10 @@
         color: var(--text);
       }
 
+      #manual-retry-button {
+        margin-top: 14px;
+      }
+
       .message {
         min-height: 24px;
         margin-top: 14px;
@@ -261,15 +265,18 @@
           <dt>Automation</dt>
           <dd id="status-runtime">Not running</dd>
         </dl>
+        <button type="button" id="manual-retry-button" hidden>Retry now</button>
       </section>
     </main>
 
     <script>
       const form = document.querySelector("#registration-form");
       const resetButton = document.querySelector("#reset-button");
+      const manualRetryButton = document.querySelector("#manual-retry-button");
       const message = document.querySelector("#message");
       const statusPanel = document.querySelector("#status-panel");
       let runtimePollId = null;
+      let currentRegistrationId = null;
 
       function setMessage(text, kind) {
         message.textContent = text;
@@ -282,6 +289,7 @@
       }
 
       function showStatus(registration) {
+        currentRegistrationId = registration.id;
         statusPanel.hidden = false;
         document.querySelector("#status-id").textContent = registration.id;
         document.querySelector("#status-status").textContent = registration.status;
@@ -291,6 +299,7 @@
         document.querySelector("#status-last").textContent = formatDate(registration.last_registered_at);
         document.querySelector("#status-expires").textContent = formatDate(registration.expires_at);
         document.querySelector("#status-next").textContent = formatDate(registration.next_registration_at);
+        manualRetryButton.hidden = registration.status !== "ACTION_REQUIRED";
       }
 
       async function refreshRegistration(registrationId) {
@@ -312,6 +321,8 @@
           setMessage("Manual CAPTCHA completed. Automation resumed.", "ok");
         } else if (runtime.state === "success" || runtime.state === "completed") {
           setMessage(runtime.message, "ok");
+        } else if (runtime.state === "action_required") {
+          setMessage(runtime.message, "error");
         } else if (runtime.state === "failed") {
           setMessage(runtime.message, "error");
         }
@@ -329,7 +340,7 @@
             applyRuntimeStatus(runtime);
             await refreshRegistration(registrationId);
 
-            if (["success", "completed", "failed"].includes(runtime.state)) {
+            if (["success", "completed", "failed", "action_required"].includes(runtime.state)) {
               clearInterval(runtimePollId);
               runtimePollId = null;
             }
@@ -391,16 +402,39 @@
 
       resetButton.addEventListener("click", () => {
         form.reset();
+        currentRegistrationId = null;
         form.website_url.value = "https://www.register2park.com/";
         form.apartment_name.value = "Lakeside Urban Center Apartments";
         form.days.value = "7";
         statusPanel.hidden = true;
+        manualRetryButton.hidden = true;
         document.querySelector("#status-runtime").textContent = "Not running";
         if (runtimePollId) {
           clearInterval(runtimePollId);
           runtimePollId = null;
         }
         setMessage("Form cleared.", "ok");
+      });
+
+      manualRetryButton.addEventListener("click", async () => {
+        if (!currentRegistrationId) return;
+        manualRetryButton.disabled = true;
+        try {
+          const response = await fetch(`/registrations/${currentRegistrationId}/retry`, {
+            method: "POST",
+          });
+          const body = await response.json();
+          if (!response.ok) {
+            throw new Error(body.detail ? JSON.stringify(body.detail) : "Unable to retry registration.");
+          }
+          setMessage("Manual retry started. This may send another confirmation email.", "ok");
+          showStatus(body);
+          startRuntimePolling(body.id);
+        } catch (error) {
+          setMessage(error.message, "error");
+        } finally {
+          manualRetryButton.disabled = false;
+        }
       });
     </script>
   </body>

@@ -260,6 +260,27 @@ Fix:
 - Updated email flow to click `E-Mail Confirmation`, enter the provided email,
   and submit it when that option is available.
 
+### Repeated Confirmation Emails During Failed Verification
+
+Issue:
+
+If Register2Park accepted the email confirmation step but the bot could not
+verify final success afterward, the registration stayed retryable. With a
+two-hour scheduler interval, that could send another confirmation email on
+each retry cycle.
+
+Fix:
+
+- Added `ACTION_REQUIRED` registration status.
+- Added non-retryable automation results after email submission.
+- When email is submitted but final success is not verified:
+  - the attempt is recorded
+  - `next_registration_at` is cleared
+  - scheduler retries are paused
+  - UI shows a manual-review message
+  - user can intentionally click `Retry now`
+- Added `POST /registrations/{id}/retry` for deliberate manual retries.
+
 ### Documentation Drift
 
 Issue:

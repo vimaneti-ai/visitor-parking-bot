@@ -19,6 +19,7 @@ http://127.0.0.1:8000/docs
 | `GET` | `/registrations/{id}` | Get registration with attempts |
 | `GET` | `/registrations/{id}/runtime-status` | Get live in-memory automation status |
 | `POST` | `/registrations/{id}/cancel` | Cancel future attempts |
+| `POST` | `/registrations/{id}/retry` | Manually retry a paused/action-required registration |
 
 ## Create Registration
 
@@ -80,6 +81,7 @@ It is useful for UI messages such as:
 - `captcha_resumed`
 - `success`
 - `completed`
+- `action_required`
 - `failed`
 - `idle`
 
@@ -98,12 +100,28 @@ Cancel sets:
 
 The scheduler will not run future attempts for a cancelled registration.
 
+## Manual Retry
+
+```bash
+curl -X POST http://127.0.0.1:8000/registrations/1/retry
+```
+
+Manual retry sets:
+
+- `status = PENDING`
+- `next_registration_at = now`
+
+The first retry attempt starts immediately in the background. Use this when a
+registration is `ACTION_REQUIRED` and you intentionally want to send another
+confirmation email/attempt.
+
 ## Registration Statuses
 
 | Status | Meaning |
 | --- | --- |
 | `PENDING` | Saved and waiting for first successful registration |
 | `ACTIVE` | At least one success; daily re-registration is scheduled |
+| `ACTION_REQUIRED` | Automation paused after email submission or manual-review condition; no automatic retry |
 | `COMPLETED` | Requested number of successful registrations reached |
 | `FAILED` | Stopped because of a hard blocker or unrecoverable state |
 | `CANCELLED` | User cancelled future attempts |

@@ -115,7 +115,10 @@ visitor-parking-bot/
    - `next_registration_at = success timestamp + 24 hours`.
    - `registration_count` increments.
 6. Scheduler checks due registrations every 2 hours by default.
-7. Registration becomes `COMPLETED` when `registration_count >= days`.
+7. If email confirmation was submitted but final success cannot be verified,
+   status becomes `ACTION_REQUIRED` and automatic retries stop to avoid
+   duplicate emails.
+8. Registration becomes `COMPLETED` when `registration_count >= days`.
 
 ## Run Tests
 

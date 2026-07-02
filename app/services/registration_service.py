@@ -214,22 +214,37 @@ def run_attempt_for_registration(db: Session, registration: Registration, now: d
                 confirmation_text=confirmation_text,
             )
             db.add(attempt)
-            registration.next_registration_at = completed_at + timedelta(
-                minutes=settings.retry_delay_minutes
-            )
-            if registration.status != RegistrationStatus.ACTIVE:
-                registration.status = RegistrationStatus.PENDING
-            logger.warning(
-                "Registration id=%s attempt failed, retrying at %s",
-                registration.id,
-                registration.next_registration_at,
-            )
-            set_runtime_status(
-                registration.id,
-                "failed",
-                result.message,
-                result.screenshot_path,
-            )
+            if not getattr(result, "retryable", True):
+                registration.status = RegistrationStatus.ACTION_REQUIRED
+                registration.next_registration_at = None
+                logger.warning(
+                    "Registration id=%s needs manual review; automatic retries paused: %s",
+                    registration.id,
+                    result.message,
+                )
+                set_runtime_status(
+                    registration.id,
+                    "action_required",
+                    result.message,
+                    result.screenshot_path,
+                )
+            else:
+                registration.next_registration_at = completed_at + timedelta(
+                    minutes=settings.retry_delay_minutes
+                )
+                if registration.status != RegistrationStatus.ACTIVE:
+                    registration.status = RegistrationStatus.PENDING
+                logger.warning(
+                    "Registration id=%s attempt failed, retrying at %s",
+                    registration.id,
+                    registration.next_registration_at,
+                )
+                set_runtime_status(
+                    registration.id,
+                    "failed",
+                    result.message,
+                    result.screenshot_path,
+                )
 
         db.commit()
     finally:
@@ -263,6 +278,26 @@ def cancel_registration(db: Session, registration_id: int) -> Registration | Non
     db.commit()
     db.refresh(registration)
     logger.info("Cancelled registration id=%s", registration.id)
+    return registration
+
+
+def queue_manual_retry(db: Session, registration_id: int) -> Registration | None:
+    registration = db.get(Registration, registration_id)
+    if registration is None:
+        return None
+    if registration.status in [RegistrationStatus.CANCELLED, RegistrationStatus.COMPLETED]:
+        return registration
+
+    registration.status = RegistrationStatus.PENDING
+    registration.next_registration_at = datetime.utcnow()
+    db.commit()
+    db.refresh(registration)
+    logger.info("Queued manual retry for registration id=%s", registration.id)
+    set_runtime_status(
+        registration.id,
+        "queued",
+        "Manual retry queued. Automation will run now.",
+    )
     return registration
 
 

@@ -220,6 +220,29 @@ ORDER BY attempted_at DESC;
 
 Then open the latest screenshot path.
 
+## Registration Says `ACTION_REQUIRED`
+
+This usually means the bot submitted the email confirmation step, then could
+not verify a final success page.
+
+The scheduler will not retry automatically because another retry may send
+another confirmation email.
+
+Check the latest attempt:
+
+```sql
+SELECT id, registration_id, attempted_at, status, message, screenshot_path
+FROM registration_attempts
+ORDER BY attempted_at DESC;
+```
+
+Review the screenshot/logs. If you intentionally want another attempt, click
+`Retry now` in the UI or call:
+
+```bash
+curl -X POST http://127.0.0.1:8000/registrations/1/retry
+```
+
 ## Scheduler Did Not Run
 
 Confirm the FastAPI app is running. The scheduler starts with app startup.
@@ -239,7 +262,8 @@ ORDER BY created_at DESC;
 ```
 
 Only `PENDING` and `ACTIVE` registrations with `next_registration_at <= now`
-are processed.
+are processed. `ACTION_REQUIRED`, `FAILED`, `COMPLETED`, and `CANCELLED`
+registrations are not picked up by the scheduler.
 
 ## Tests
 

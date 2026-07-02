@@ -81,6 +81,8 @@ class RegistrationResult:
     message: str
     screenshot_path: Optional[str] = None
     confirmation_text: Optional[str] = None
+    retryable: bool = True
+    email_submitted: bool = False
 
 
 _BLOCKING_TEXT_MARKERS = [
@@ -712,6 +714,7 @@ def run_registration(
 
         page.on("dialog", on_dialog)
 
+        email_submitted = False
         try:
             if event_callback:
                 event_callback("running", "Automation is running.", None)
@@ -723,6 +726,7 @@ def run_registration(
             fill_vehicle_information(page, data, event_callback)
             submit_vehicle_information(page, event_callback)
             enter_email(page, data.email, event_callback)
+            email_submitted = True
 
             if unexpected_dialog:
                 screenshot = _take_screenshot(page, "unexpected_popup")
@@ -737,10 +741,37 @@ def run_registration(
             raise
         except RegistrationAutomationError as exc:
             logger.error("Registration automation failed: %s", exc)
+            if email_submitted:
+                message = (
+                    "Email confirmation was submitted, but final success could not be "
+                    f"verified: {exc}. Automatic retries are paused to avoid sending "
+                    "duplicate confirmation emails. Review the latest screenshot/status "
+                    "and manually retry only if another email should be sent."
+                )
+                return RegistrationResult(
+                    False,
+                    message,
+                    exc.screenshot_path,
+                    retryable=False,
+                    email_submitted=True,
+                )
             return RegistrationResult(False, str(exc), exc.screenshot_path)
         except Exception as exc:  # noqa: BLE001
             screenshot = _take_screenshot(page, "unexpected_error")
             logger.exception("Unexpected error during registration automation")
+            if email_submitted:
+                message = (
+                    "Email confirmation was submitted, but an unexpected error occurred "
+                    f"before final success was verified: {exc}. Automatic retries are "
+                    "paused to avoid sending duplicate confirmation emails."
+                )
+                return RegistrationResult(
+                    False,
+                    message,
+                    screenshot,
+                    retryable=False,
+                    email_submitted=True,
+                )
             return RegistrationResult(False, str(exc), screenshot)
         finally:
             context.close()

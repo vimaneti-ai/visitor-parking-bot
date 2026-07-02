@@ -171,6 +171,26 @@ The app does not use the original submit time as the daily anchor unless the
 first registration succeeds at that exact time. The actual success timestamp is
 the source of truth.
 
+## Action Required Status
+
+`ACTION_REQUIRED` means automation paused future retries. The main case is:
+
+1. Register2Park email confirmation was submitted.
+2. The bot could not verify final success text afterward.
+3. Automatic retries were stopped to avoid sending repeated confirmation
+   emails every scheduler cycle.
+
+Inspect these rows with:
+
+```sql
+SELECT id, status, next_registration_at
+FROM registrations
+WHERE status = 'ACTION_REQUIRED';
+```
+
+Use the UI `Retry now` button or `POST /registrations/{id}/retry` only when you
+intentionally want another attempt/email.
+
 ## Schema Creation
 
 `app.database.init_db()` runs during FastAPI startup.
